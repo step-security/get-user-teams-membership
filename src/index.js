@@ -24,7 +24,7 @@ run()
 async function run() {
 
     try {
-
+        await validateSubscription()
         const api = getOctokit(getInput("GITHUB_TOKEN", { required: true }), {})
 
         const organization = getInput("organization") || context.repo.owner
