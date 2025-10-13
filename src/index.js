@@ -1,4 +1,4 @@
-import { getInput, setOutput, setFailed } from '@actions/core'
+import { getInput, setOutput, setFailed, error, info } from '@actions/core'
 import { getOctokit, context } from '@actions/github'
 import axios from 'axios'
 
@@ -7,14 +7,14 @@ async function validateSubscription() {
 
   try {
     await axios.get(API_URL, {timeout: 3000})
-  } catch (error) {
-    if (error.response && error.response.status === 403) {
-      core.error(
+  } catch (err) {
+    if (err.response && err.response.status === 403) {
+      error(
         'Subscription is not valid. Reach out to support@stepsecurity.io'
       )
       process.exit(1)
     } else {
-      core.info('Timeout or API not reachable. Continuing to next step.')
+      info('Timeout or API not reachable. Continuing to next step.')
     }
   }
 }
