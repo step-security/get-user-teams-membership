@@ -1,0 +1,25 @@
+{
+  "name": "get-user-teams-membership",
+  "version": "3.0.0",
+  "description": "GitHub Action to get a list a user teams membership",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "ncc build src/index.js -m -o dist"
+  },
+  "keywords": [],
+  "author": "step-security",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/step-security/get-user-teams-membership"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.1",
+    "axios": "^1.12.2"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3"
+  }
+}
