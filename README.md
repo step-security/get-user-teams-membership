@@ -1,3 +1,5 @@
+[![StepSecurity Maintained Action](https://raw.githubusercontent.com/step-security/maintained-actions-assets/main/assets/maintained-action-banner.png)](https://docs.stepsecurity.io/actions/stepsecurity-maintained-actions)
+
 # get-user-teams-membership
 
 [GitHub Action](https://github.com/features/actions) to get the list of teams a user belongs in a given organization.
