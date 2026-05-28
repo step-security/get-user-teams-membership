@@ -1,0 +1,27 @@
+# Runs unit and integration tests on push and pull request to default branch.
+# Run both on the same job, they are so fast no need to parallelize it
+name: tests
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      [main]
+  push:
+    branches:
+      [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: install, test and build
+        run: |
+          npm ci
+          npm test -- --run
+          npm run build

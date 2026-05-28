@@ -1,4 +1,4 @@
-name: 'login-teams-membership'
+name: 'get-user-teams-membership'
 description: 'Get a user teams membership in an organization'
 inputs:
   organization: 
@@ -20,7 +20,7 @@ outputs:
   teams: 
     description: 'The list of teams the user belongs (array)'
   isTeamMember:
-    description: 'Predicate to indicate if user belongs to team'
+    description: 'String value ("true" or "false") indicating if user belongs to team. Note: outputs are always strings, so compare against string values (e.g. steps.checkUserMember.outputs.isTeamMember == "true").'
 runs:
   using: 'node24'
   main: 'dist/index.js'

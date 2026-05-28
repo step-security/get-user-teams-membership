@@ -17,11 +17,11 @@ async function validateSubscription() {
     "https://docs.stepsecurity.io/actions/stepsecurity-maintained-actions";
 
   core.info("");
-  core.info("[1;36mStepSecurity Maintained Action[0m");
+  core.info("\u001b[1;36mStepSecurity Maintained Action\u001b[0m");
   core.info(`Secure drop-in replacement for ${upstream}`);
   if (repoPrivate === false)
-    core.info("[32m✓ Free for public repositories[0m");
-  core.info(`[36mLearn more:[0m ${docsUrl}`);
+    core.info("\u001b[32m✓ Free for public repositories\u001b[0m");
+  core.info(`\u001b[36mLearn more:\u001b[0m ${docsUrl}`);
   core.info("");
 
   if (repoPrivate === false) return;
@@ -38,10 +38,10 @@ async function validateSubscription() {
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 403) {
       core.error(
-        `[1;31mThis action requires a StepSecurity subscription for private repositories.[0m`,
+        `\u001b[1;31mThis action requires a StepSecurity subscription for private repositories.\u001b[0m`,
       );
       core.error(
-        `[31mLearn how to enable a subscription: ${docsUrl}[0m`,
+        `\u001b[31mLearn how to enable a subscription: ${docsUrl}\u001b[0m`,
       );
       process.exit(1);
     }
@@ -49,66 +49,87 @@ async function validateSubscription() {
   }
 }
 
-run()
+export async function fetchUserTeams(api, organization, username) {
+    const query = `query($cursor: String, $org: String!, $userLogins: [String!], $username: String!)  {
+        user(login: $username) {
+            id
+        }
+        organization(login: $org) {
+          teams (first:100, userLogins: $userLogins, after: $cursor) {
+              nodes {
+                name
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+    }`
+
+    let data
+    let teams = []
+    let cursor = null
+
+    // We need to check if the user exists, because if it doesn't exist then all teams in the org
+    // are returned. If user doesn't exist graphql will throw an exception
+    // Paginate
+    do {
+        data = await api.graphql(query, {
+            "cursor": cursor,
+            "org": organization,
+            "userLogins": [username],
+            "username": username
+        })
+
+        teams = teams.concat(data.organization.teams.nodes.map((val) => {
+            return val.name
+        }))
+
+        cursor = data.organization.teams.pageInfo.endCursor
+
+        core.debug(`Got teams: ${teams.join(",")}. Has next page: ${data.organization.teams.pageInfo.hasNextPage}`)
+    } while (data.organization.teams.pageInfo.hasNextPage)
+
+    return teams
+}
+
+export function parseTeamInput(teamInput) {
+    return teamInput
+        .trim()
+        .toLowerCase()
+        .split(",")
+        .map(item => item.trim())
+        .filter(Boolean)
+}
+
+export function checkTeamMembership(teams, inputTeams) {
+    return inputTeams.length > 0 && teams.some((teamName) => inputTeams.includes(teamName.toLowerCase()))
+}
 
 async function run() {
-
     try {
         await validateSubscription()
         const api = getOctokit(core.getInput("GITHUB_TOKEN", { required: true }), {})
 
         const organization = core.getInput("organization") || context.repo.owner
-        const username = core.getInput("username")
-        const inputTeams = core.getInput("team").trim().toLowerCase().split(",").map(item => item.trim())
+        const username = core.getInput("username", { required: true })
+        const inputTeams = parseTeamInput(core.getInput("team"))
 
         console.log(`Getting teams for ${username} in org ${organization}.${inputTeams.length ? ` Will check if belongs to one of [${inputTeams.join(",")}]` : ''}`)
 
-        const query = `query($cursor: String, $org: String!, $userLogins: [String!], $username: String!)  {
-            user(login: $username) {
-                id
-            }
-            organization(login: $org) {
-              teams (first:1, userLogins: $userLogins, after: $cursor) {
-                  nodes {
-                    name
-                }
-                pageInfo {
-                  hasNextPage
-                  endCursor
-                }
-              }
-            }
-        }`
-
-        let data
-        let teams = []
-        let cursor = null
-
-        // We need to check if the user exists, because if it doesn't exist then all teams in the org
-        // are returned. If user doesn't exist graphql will throw an exception
-        // Paginate
-        do {
-            data = await api.graphql(query, {
-                "cursor": cursor,
-                "org": organization,
-                "userLogins": [username],
-                "username": username
-            })
-
-            teams = teams.concat(data.organization.teams.nodes.map((val) => {
-                return val.name
-            }))
-
-            cursor = data.organization.teams.pageInfo.endCursor
-        } while (data.organization.teams.pageInfo.hasNextPage)
-
-        const isTeamMember = teams.some((teamName) => inputTeams.includes(teamName.toLowerCase()))
+        const teams = await fetchUserTeams(api, organization, username)
+        const isTeamMember = checkTeamMembership(teams, inputTeams)
 
         core.setOutput("teams", teams)
         core.setOutput("isTeamMember", isTeamMember)
 
     } catch (error) {
-        console.log(error)
+        core.debug(error.stack)
         core.setFailed(error.message)
     }
+}
+
+if (process.env.NODE_ENV !== 'test') {
+    run()
 }
