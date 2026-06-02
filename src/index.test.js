@@ -237,4 +237,46 @@ describe('fetchUserTeams', () => {
         const secondCall = mockApi.graphql.mock.calls[1][1]
         expect(secondCall.cursor).toBe('next-cursor')
     })
+
+    it('should fetch team slugs when useTeamSlug is true', async () => {
+        mockApi.graphql.mockResolvedValueOnce({
+            organization: {
+                teams: {
+                    nodes: [
+                        { slug: 'team-a', name: 'Team A' },
+                        { slug: 'team-b', name: 'Team B' }
+                    ],
+                    pageInfo: {
+                        hasNextPage: false,
+                        endCursor: null
+                    }
+                }
+            }
+        })
+
+        const teams = await fetchUserTeams(mockApi, 'myorg', 'john', true)
+        expect(teams).toEqual(['team-a', 'team-b'])
+        expect(mockApi.graphql).toHaveBeenCalledTimes(1)
+    })
+
+    it('should check membership by slug when useTeamSlug is true', async () => {
+        mockApi.graphql.mockResolvedValueOnce({
+            organization: {
+                teams: {
+                    nodes: [
+                        { slug: 'team-a', name: 'Team A' },
+                        { slug: 'team-b', name: 'Team B' }
+                    ],
+                    pageInfo: {
+                        hasNextPage: false,
+                        endCursor: null
+                    }
+                }
+            }
+        })
+
+        const teams = await fetchUserTeams(mockApi, 'myorg', 'john', true)
+        expect(checkTeamMembership(teams, ['team-a'])).toBe(true)
+        expect(checkTeamMembership(teams, ['team a'])).toBe(false)
+    })
 })

@@ -49,7 +49,7 @@ async function validateSubscription() {
   }
 }
 
-export async function fetchUserTeams(api, organization, username) {
+export async function fetchUserTeams(api, organization, username, useTeamSlug) {
     const query = `query($cursor: String, $org: String!, $userLogins: [String!], $username: String!)  {
         user(login: $username) {
             id
@@ -57,6 +57,7 @@ export async function fetchUserTeams(api, organization, username) {
         organization(login: $org) {
           teams (first:100, userLogins: $userLogins, after: $cursor) {
               nodes {
+                slug
                 name
             }
             pageInfo {
@@ -83,7 +84,7 @@ export async function fetchUserTeams(api, organization, username) {
         })
 
         teams = teams.concat(data.organization.teams.nodes.map((val) => {
-            return val.name
+            return useTeamSlug ? val.slug : val.name
         }))
 
         cursor = data.organization.teams.pageInfo.endCursor
@@ -115,10 +116,11 @@ async function run() {
         const organization = core.getInput("organization") || context.repo.owner
         const username = core.getInput("username", { required: true })
         const inputTeams = parseTeamInput(core.getInput("team"))
+        const useTeamSlug = core.getBooleanInput('use_team_slug')
 
         console.log(`Getting teams for ${username} in org ${organization}.${inputTeams.length ? ` Will check if belongs to one of [${inputTeams.join(",")}]` : ''}`)
 
-        const teams = await fetchUserTeams(api, organization, username)
+        const teams = await fetchUserTeams(api, organization, username, useTeamSlug)
         const isTeamMember = checkTeamMembership(teams, inputTeams)
 
         core.setOutput("teams", teams)
