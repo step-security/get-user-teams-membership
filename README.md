@@ -7,7 +7,7 @@ It can also be optionally used to check if the user belongs to a given team
 
 It emits two outputs which are available via the `steps` [output context](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#steps-context)
 
-* `teams` - Array with the list of teams the user belongs (since it's array you can check if a user belongs to a team using [contains](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#contains) function)
+* `teams` - Array with the list of teams the user belongs (since it's array you can check if a user belongs to a team using [contains](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#contains) function). This will have the team name or the team slug depending on value of `use_team_slug` value.
 * `isTeamMember` - A string (`'true'` or `'false'`) indicating if a user belongs to a given team (always `'false'` if `team` parameter is not used). **Note:** Although this represents a boolean concept, GitHub Actions outputs are always strings, so always compare against the string values `'true'` or `'false'` (e.g. `steps.checkUserMember.outputs.isTeamMember == 'true'`) rather than a boolean literal.
 
 # Usage
@@ -20,10 +20,17 @@ See [action.yml](action.yml)
     username: # The github username for which we want to fetch teams membership in a given organization.
     organization: # optional. Default value ${{ github.repository_owner }} 
                   # Organization to get membership from.
-    team: # optional. Check if user belong to this team. 
-          # If you just want to check membership of a particular team. (only team name, don't include orgname)
+    team: # optional. Check if user belong to this team (team name or slug, depending on use_team_slug). 
+          # If you just want to check membership of a particular team. (only team name/slug, don't include orgname)
+    use_team_slug: # optional. If set to true, the action will use team slugs instead of team names.
+                   # When enabled, the team input and the teams output will use slugs rather than display names. (default: false)
     GITHUB_TOKEN: # Personal access token used to query github (Requires scope: `read:org`)
 ```
+
+  > [!WARNING]
+  > If you see a warning like `Node.js 20 actions are deprecated... tspascoal/get-user-teams-membership@v3 ...`, update your workflow to `tspascoal/get-user-teams-membership@v4`.
+  >
+  > `v4` has been upgraded to run on Node.js 24 and is the recommended version.
 
 ## Requirements
 
@@ -32,6 +39,9 @@ In order to use this action you need to use one of the following authentication 
 - A [personal access token (classic)] with `read:org` [scope](https://docs.github.com/en/developers/apps/scopes-for-oauth-apps#available-scopes) (so the built-in [GITHUB_TOKEN](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token) is not enough)
 - A [fine-grained personal access token] with `Organization permissions > Members > Read-only` scope
 - A [GitHub Apps](https://docs.github.com/en/apps/overview) installation token with `Organization permissions > Members > Read-only` scope. You can use the [create-github-app-token](https://github.com/actions/create-github-app-token) action to generate an installation token.
+
+> **Warning** If you are using GitHub Enterprise Server, this version is only supported on GHES 3.4 or Later.
+
 
 ## Scenarios
 
